@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Priyanjana's Weather App</title>
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+  <!-- Font Awesome 6 for weather icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <!-- Chart.js for bar charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <!-- Chart.js DataLabels plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: #fff;
+      min-height: 100vh;
+    }
+    .navbar {
+      background: rgba(0, 0, 0, 0.8) !important;
+    }
+    .navbar-brand, .nav-link {
+      color: #fff !important;
+    }
+    .card {
+      transition: transform 0.3s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .card.border-warning .card-header {
+      background: linear-gradient(90deg, #ffca2c, #ff6f00);
+    }
+    .card.border-info .card-header {
+      background: linear-gradient(90deg, #0288d1, #4fc3f7);
+    }
+    .card.border-secondary .card-header {
+      background: linear-gradient(90deg, #424242, #757575);
+    }
+    .card.border-teal .card-header {
+      background: linear-gradient(90deg, #00c4b4, #26a69a);
+    }
+    .card.border-blue .card-header {
+      background: linear-gradient(90deg, #0288d1, #4fc3f7);
+    }
+    .card.border-yellow .card-header {
+      background: linear-gradient(90deg, #fbc02d, #f57c00);
+    }
+    .card.border-purple .card-header {
+      background: linear-gradient(90deg, #7b1fa2, #ab47bc);
+    }
+    .table-responsive {
+      background: #000000; /* Solid black background */
+    }
+    .table thead th {
+      color: #fff; /* White text for headers */
+      background: #1a1a1a; /* Dark gray for headers */
+    }
+    .table tbody th, .table tbody td {
+      color: #000000; /* Black text for data */
+    }
+    .table-striped tbody tr:nth-of-type(odd) {
+      background: #cccccc; /* Light gray for odd rows */
+    }
+    .table-striped tbody tr:nth-of-type(even) {
+      background: #ffffff; /* White for even rows */
+    }
+    .dark-theme {
+      background: #1c2526;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    canvas {
+      max-width: 100%;
+    }
+    .current-condition {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .current-condition i {
+      font-size: 3rem;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand fw-semibold" href="#">Pushpita's Weather App</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link active" aria-current="page" href="#">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">About this App</a></li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Quick Cities</a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#" data-city="Delhi">Delhi</a></li>
+              <li><a class="dropdown-item" href="#" data-city="Kolkata">Kolkata</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#" data-city="Mumbai">Mumbai</a></li>
+            </ul>
+          </li>
+          <li class="nav-item"><a class="nav-link">Usage Guide</a></li>
+        </ul>
+        <form class="d-flex" role="search" id="searchForm">
+          <input class="form-control me-2" type="search" placeholder="Search city…" aria-label="Search city" id="searchInput">
+          <button class="btn btn-outline-success" type="submit">Search</button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-4">
+    <h1 class="text-center mb-4">Weather for Delhi</h1>
+
+    <!-- Current Condition -->
+    <div class="current-condition mb-5">
+      <h2 class="display-6 mb-3">Current Condition (06:29 PM IST, June 27, 2025)</h2>
+      <div class="d-flex justify-content-center align-items-center gap-3">
+        <i class="fa-solid fa-cloud" id="currentIcon"></i>
+        <div>
+          <h1 class="display-4" id="currentTemp">84°F</h1>
+          <p class="fs-4" id="currentDesc">Cloudy</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weather Metrics Boxes -->
+    <div class="row row-cols-1 row-cols-md-4 mb-5 text-center g-4">
+      <!-- Wind -->
+      <div class="col">
+        <div class="card h-100 border-teal shadow-sm">
+          <div class="card-header py-2 text-bg-teal d-flex align-items-center justify-content-center gap-2">
+            <i class="fa-solid fa-wind fa-lg"></i>
+            <h5 class="my-0 fw-normal">Wind</h5>
+          </div>
+          <div class="card-body">
+            <p class="fs-5 mb-0" id="windValue">7 mph</p>
+          </div>
+        </div>
+      </div>
+      <!-- Humidity -->
+      <div class="col">
+        <div class="card h-100 border-blue shadow-sm">
+          <div class="card-header py-2 text-bg-blue d-flex align-items-center justify-content-center gap-2">
+            <i class="fa-solid fa-droplet fa-lg"></i>
+            <h5 class="my-0 fw-normal">Humidity</h5>
+          </div>
+          <div class="card-body">
+            <p class="fs-5 mb-0" id="humidityValue">90%</p>
+          </div>
+        </div>
+      </div>
+      <!-- UV Index -->
+      <div class="col">
+        <div class="card h-100 border-yellow shadow-sm">
+          <div class="card-header py-2 text-bg-yellow d-flex align-items-center justify-content-center gap-2">
+            <i class="fa-solid fa-sun fa-lg"></i>
+            <h5 class="my-0 fw-normal">UV Index</h5>
+          </div>
+          <div class="card-body">
+            <p class="fs-5 mb-0" id="uvValue">0 (Low)</p>
+          </div>
+        </div>
+      </div>
+      <!-- Pressure -->
+      <div class="col">
+        <div class="card h-100 border-purple shadow-sm">
+          <div class="card-header py-2 text-bg-purple d-flex align-items-center justify-content-center gap-2">
+            <i class="fa-solid fa-gauge fa-lg"></i>
+            <h5 class="my-0 fw-normal">Pressure</h5>
+          </div>
+          <div class="card-body">
+            <p class="fs-5 mb-0" id="pressureValue">Low</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weather Cards -->
+    <div class="row row-cols-1 row-cols-md-3 mb-5 text-center g-4">
+      <!-- Sunny -->
+      <div class="col">
+        <div class="card h-100 border-warning shadow-sm">
+          <div class="card-header py-3 text-bg-warning d-flex align-items-center justify-content-center gap-2">
+            <i class="fa-solid fa-sun fa-xl"></i>
+            <h4 class="my-0 fw-normal">Sunny</h4>
+          </div>
+          <div class="card-body">
+            <h1 class="card-title display-5" id="sunnyTemp">84°F</h1>
+            <ul class="list-unstyled mt-3 mb-4" id="sunnyDetails">
+              <li>Humidity: 45%</li>
+              <li>Wind: 12 km/h</li>
+              <li>Precipitation: 60%</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <!-- Rainy -->
+      <div class="col">
+        <div class="card h-100 border-info shadow-sm">
+          <div class="card-header py-3 text-bg-info d-flex align-items-center justify-content-center gap-2">
+            <i class="fa-solid fa-cloud-showers-heavy fa-xl"></i>
+            <h4 class="my-0 fw-normal">Rainy</h4>
+          </div>
+          <div class="card-body">
+            <h1 class="card-title display-5" id="rainyTemp">83°F</h1>
+            <ul class="list-unstyled mt-3 mb-4" id="rainyDetails">
+              <li>Humidity: 88%</li>
+              <li>Wind: 15 km/h</li>
+              <li>Precipitation: 40%</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <!-- Night / Clear -->
+      <div class="col">
+        <div class="card h-100 border-secondary shadow-sm">
+          <div class="card-header py-3 text-bg-dark d-flex align-items-center justify-content-center gap-2">
+            <i class="fa-solid fa-moon fa-xl"></i>
+            <h4 class="my-0 fw-normal">Night</h4>
+          </div>
+          <div class="card-body">
+            <h1 class="card-title display-5" id="nightTemp">81°F</h1>
+            <ul class="list-unstyled mt-3 mb-4" id="nightDetails">
+              <li>Humidity: 65%</li>
+              <li>Wind: 5 km/h</li>
+              <li>Precipitation: 20%</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hourly Forecast Chart -->
+    <h2 class="display-6 text-center mb-4">Hourly Forecast (Today)</h2>
+    <div class="mb-5">
+      <canvas id="hourlyChart"></canvas>
+    </div>
+
+    <!-- 7-Day Forecast Chart (Dark Theme) -->
+    <h2 class="display-6 text-center mb-4">7-Day Forecast (Mon-Sun)</h2>
+    <div class="dark-theme mb-5">
+      <canvas id="dailyChart"></canvas>
+    </div>
+
+    <!-- Summary Table -->
+    <h2 class="display-6 text-center mb-4">Weather of other places</h2>
+    <div class="table-responsive rounded-3 shadow-sm overflow-hidden">
+      <table class="table table-striped align-middle text-center mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 34%;">City</th>
+            <th>Cloud %</th>
+            <th>Feels like</th>
+            <th>Humidity</th>
+            <th>Max temp</th>
+            <th>Min temp</th>
+            <th>Sunrise</th>
+            <th>Sunset</th>
+            <th>Temp</th>
+            <th>Wind deg</th>
+            <th>Wind (km/h)</th>
+          </tr>
+        </thead>
+        <tbody id="cityTableBody">
+          <tr>
+            <th scope="row" class="text-start">Shanghai</th>
+            <td>9</td><td>20</td><td>22</td><td>2</td><td>12</td><td>06:04</td><td>18:26</td><td>8</td><td>2</td><td>3</td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-start">Boston</th>
+            <td>9</td><td>12</td><td>2</td><td>21</td><td>12</td><td>05:44</td><td>20:26</td><td>9</td><td>2</td><td>4</td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-start">Kashmir</th>
+            <td>8</td><td>0</td><td>22</td><td>34</td><td>12</td><td>05:09</td><td>19:21</td><td>4</td><td>7</td><td>1</td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-start">Japan</th>
+            <td>9</td><td>20</td><td>2</td><td>21</td><td>12</td><td>04:57</td><td>18:06</td><td>18</td><td>12</td><td>13</td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-start">Australia</th>
+            <td>5</td><td>10</td><td>2</td><td>32</td><td>24</td><td>06:14</td><td>17:46</td><td>25</td><td>34</td><td>13</td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-start">China</th>
+            <td>9</td><td>20</td><td>22</td><td>2</td><td>12</td><td>06:04</td><td>18:26</td><td>8</td><td>2</td><td>3</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>
